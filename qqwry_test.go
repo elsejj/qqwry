@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-var dbpath = "d:\\tools\\ip\\qqwry.dat"
+var dbpath = "qqwry.dat"
 var ip = "183.224.52.133"
 
 func TestSearch(t *testing.T) {
@@ -18,6 +18,15 @@ func BenchmarkSearch(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		db.Search(ip)
 	}
+}
+
+func TestUpdate(t *testing.T) {
+	//Update(true)
+}
+
+func TestDump(t *testing.T) {
+	db, _ := NewDb(dbpath)
+	db.Dump()
 }
 
 /*
