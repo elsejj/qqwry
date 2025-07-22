@@ -32,6 +32,11 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	dbPath = findDB()
+	if dbPath == "" {
+		println("qqwry.dat not found, please specify the path with --db option or place it in a standard location.")
+		os.Exit(1)
+	}
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -49,4 +54,36 @@ func init() {
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.PersistentFlags().StringVarP(&dbPath, "db", "d", "qqwry.dat", "Path to the qqwry.dat database file")
+}
+
+func findDB() string {
+	if isFile(dbPath) {
+		return dbPath
+	}
+	findPlaces := []string{
+		"/usr/local/share/qqwry.dat",
+		"/usr/share/qqwry.dat",
+		"/usr/local/qqwry.dat",
+		"/usr/qqwry.dat",
+		"/etc/qqwry.dat",
+		"/qqwry.dat",
+		"qqwry.dat",
+		"$HOME/qqwry.dat",
+		"$HOME/.local/share/qqwry.dat",
+		"$HOME/.qqwry.dat",
+		"$HOME/.qqwry/qqwry.dat",
+		"$HOME/.config/qqwry.dat",
+		"$HOME/.config/qqwry/qqwry.dat",
+		"$HOME/AppData/Local/qqwry.dat",
+		"$HOME/AppData/Roaming/qqwry.dat",
+		"$HOME/AppData/Local/qqwry/qqwry.dat",
+		"$HOME/AppData/Roaming/qqwry/qqwry.dat",
+	}
+	for _, place := range findPlaces {
+		place = os.ExpandEnv(place)
+		if isFile(place) {
+			return place
+		}
+	}
+	return ""
 }
