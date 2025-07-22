@@ -1,4 +1,4 @@
-// the qqwry.dat file format is intrudced in http://blog.csdn.net/cnss/article/details/77628
+// the qqwry.dat file format is introduced in http://blog.csdn.net/cnss/article/details/77628
 // the qqwry.dat file can be download from http://www.cz88.net/
 
 package qqwry
@@ -11,11 +11,11 @@ import (
 	"strings"
 )
 
-func toOffest3(b []byte, o int) int {
+func toOffset3(b []byte, o int) int {
 	return int(b[o+0]) | int(b[o+1])<<8 | int(b[o+2])<<16
 }
 
-func toOffest4(b []byte, o int) int {
+func toOffset4(b []byte, o int) int {
 	return int(b[o+0]) | int(b[o+1])<<8 | int(b[o+2])<<16 | int(b[o+3])<<24
 }
 
@@ -37,7 +37,7 @@ func parseIp(ip string) (int, error) {
 		}
 		b[i] = byte(n)
 	}
-	return toOffest4(b, 0), nil
+	return toOffset4(b, 0), nil
 }
 
 // the qqwry.dat database
@@ -47,14 +47,14 @@ type Db struct {
 
 func NewDb(path string) (*Db, error) {
 	db := new(Db)
-	err := db.doinit(path)
+	err := db.doInit(path)
 	if err != nil {
 		return nil, err
 	}
 	return db, nil
 }
 
-func (self *Db) doinit(path string) error {
+func (self *Db) doInit(path string) error {
 	if self.qqwry != nil {
 		return nil
 	}
@@ -82,7 +82,7 @@ func (self *Db) doinit(path string) error {
 func (self *Db) readIp(o int) (start, end, country, area []byte) {
 	qqwry := self.qqwry
 	start = qqwry[o : o+4]
-	o = toOffest3(qqwry, o+4)
+	o = toOffset3(qqwry, o+4)
 	end = qqwry[o : o+4]
 
 	country, area = self.readInfo(o + 4)
@@ -93,7 +93,7 @@ func (self *Db) readText(o int) (int, []byte) {
 	qqwry := self.qqwry
 
 	if qqwry[o] == 0x02 {
-		o = toOffest3(qqwry, o+1)
+		o = toOffset3(qqwry, o+1)
 		_, t := self.readText(o)
 		return 4, t
 	} else {
@@ -108,7 +108,7 @@ func (self *Db) readInfo(o int) (country, area []byte) {
 	qqwry := self.qqwry
 
 	if qqwry[o] == 0x01 {
-		o = toOffest3(qqwry, o+1)
+		o = toOffset3(qqwry, o+1)
 		return self.readInfo(o)
 	}
 	n, country := self.readText(o)
@@ -120,8 +120,8 @@ func (self *Db) readInfo(o int) (country, area []byte) {
 func (self *Db) Dump() {
 	qqwry := self.qqwry
 
-	o := toOffest4(qqwry, 0)
-	e := toOffest4(qqwry, 4)
+	o := toOffset4(qqwry, 0)
+	e := toOffset4(qqwry, 4)
 
 	for ; o < e; o += 7 {
 		start, end, country, area := self.readIp(o)
@@ -138,14 +138,14 @@ func (self *Db) Search(ip string) (string, string) {
 	if err != nil {
 		return "Unknown", "Unknown"
 	}
-	o := toOffest4(qqwry, 0)
-	e := toOffest4(qqwry, 4)
+	o := toOffset4(qqwry, 0)
+	e := toOffset4(qqwry, 4)
 
 	last := (e - o) / 7
 	first := 0
 	mid := (last - first) / 2
 	for {
-		val := toOffest4(qqwry, o+mid*7)
+		val := toOffset4(qqwry, o+mid*7)
 		if nip > val {
 			first = mid
 			mid = first + (last-first)/2
@@ -153,6 +153,9 @@ func (self *Db) Search(ip string) (string, string) {
 		if nip < val {
 			last = mid
 			mid = first + (last-first)/2
+		}
+		if nip == val {
+			break
 		}
 		if mid == first {
 			break
