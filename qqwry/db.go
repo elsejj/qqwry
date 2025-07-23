@@ -30,7 +30,7 @@ func parseIp(ip string) (int, error) {
 	}
 	b := make([]byte, 4)
 
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		n, e := strconv.Atoi(a[3-i])
 		if e != nil {
 			return 0, e

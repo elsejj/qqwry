@@ -4,8 +4,12 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"path"
+	"runtime"
 
+	"github.com/elsejj/qqwry/qqwry"
 	"github.com/spf13/cobra"
 )
 
@@ -32,11 +36,19 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	dbPath = findDB()
-	if dbPath == "" {
-		println("qqwry.dat not found, please specify the path with --db option or place it in a standard location.")
-		os.Exit(1)
+
+	if !isFile(dbPath) {
+		// if the file does not exist, print an error message and exit
+		fmt.Println("Error: The database file does not exist:", dbPath)
+		fmt.Println("Download the database file from https://github.com/metowolf/qqwry.dat [y/n] ?")
+		var response string
+		fmt.Scanln(&response)
+		if response == "y" || response == "Y" {
+			fmt.Println("Downloading the database file...")
+			qqwry.UpdateMetowolfQQWry(dbPath)
+		}
 	}
+
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -53,37 +65,28 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rootCmd.PersistentFlags().StringVarP(&dbPath, "db", "d", "qqwry.dat", "Path to the qqwry.dat database file")
+	rootCmd.PersistentFlags().StringVarP(&dbPath, "db", "d", defaultDBPath(), "Path to the qqwry.dat database file")
 }
 
-func findDB() string {
-	if isFile(dbPath) {
-		return dbPath
+func defaultDBPath() string {
+	// 1. check if the QQWRY_DAT environment variable is set
+	if envPath := os.Getenv("QQWRY_DAT"); envPath != "" {
+		return envPath
 	}
-	findPlaces := []string{
-		"/usr/local/share/qqwry.dat",
-		"/usr/share/qqwry.dat",
-		"/usr/local/qqwry.dat",
-		"/usr/qqwry.dat",
-		"/etc/qqwry.dat",
-		"/qqwry.dat",
-		"qqwry.dat",
-		"$HOME/qqwry.dat",
-		"$HOME/.local/share/qqwry.dat",
-		"$HOME/.qqwry.dat",
-		"$HOME/.qqwry/qqwry.dat",
-		"$HOME/.config/qqwry.dat",
-		"$HOME/.config/qqwry/qqwry.dat",
-		"$HOME/AppData/Local/qqwry.dat",
-		"$HOME/AppData/Roaming/qqwry.dat",
-		"$HOME/AppData/Local/qqwry/qqwry.dat",
-		"$HOME/AppData/Roaming/qqwry/qqwry.dat",
+	// 2. return the os-specific default path
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "qqwry.dat" // fallback to current directory if home dir cannot be determined
 	}
-	for _, place := range findPlaces {
-		place = os.ExpandEnv(place)
-		if isFile(place) {
-			return place
-		}
+	configDir := ""
+	switch runtime.GOOS {
+	case "windows":
+		configDir = path.Join(homeDir, "AppData", "Local", "qqwry")
+	default:
+		configDir = path.Join(homeDir, ".config", "qqwry")
 	}
-	return ""
+
+	os.MkdirAll(configDir, 0755) // ensure the directory exists
+	qqwryDat := path.Join(configDir, "qqwry.dat")
+	return qqwryDat
 }
